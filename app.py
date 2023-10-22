@@ -16,7 +16,6 @@ import dotenv
 
 # do it first
 
-
 app = Flask(__name__)
 
 # https://hwangtoemat.github.io/computer-science/2020-10-21-CORS/
