@@ -62,6 +62,7 @@ class DoGet(Resource):
     def get(self):  
         return {'hello': 'world!'}
 
+
 """
 # rest api 
 @api.route('/api/v1/generate')  
