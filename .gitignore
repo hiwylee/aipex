@@ -2,3 +2,5 @@
 nohup.out
 nohup.out
 *.tar
+__pycache__/**/*
+db/**/*
