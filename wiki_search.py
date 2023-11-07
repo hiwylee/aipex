@@ -10,8 +10,9 @@ wiki_search = Namespace('wiki_search')
 cohere_api_key = os.getenv("COHERE_API_KEY")
 
 
-wiki_model = wiki_search.model('wiki', strict=True, model={
+wiki_model = wiki_search.model('wiki_search', strict=True, model={
     'question': fields.String(title='keyword to search', default='역대 최고 흥행 영화 3 개', required=True),
+    'lang': fields.String(title='language', default='ko', required=True),
 })
 
 # Connect to the Weaviate demo databse containing 10M wikipedia vectors
@@ -39,7 +40,10 @@ class WikiPost(Resource) :
     @wiki_search.expect(wiki_model, validate=True)
     def post(self) :
         question = request.json.get('question')
-        query_result = semantic_serch(question, results_lang='ko')
+        lang = request.json.get('lang')
+        if lang is None :
+            lang = "ko"
+        query_result = semantic_serch(question, results_lang=lang)
         if query_result is None :
             return ({"error" : f'no data founc for query [{question}]'},400)
         print_result(query_result)
