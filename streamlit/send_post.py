@@ -13,8 +13,10 @@ def do_post(path, body):
     try:
         # response = requests.post(url, headers=headers, data=json.dumps(body, ensure_ascii=False, indent="\t"))
         response = requests.post(url, headers=headers, data=json.dumps(body))
+        print(f"type={type(response.text)}")
         print("response status %r" % response.status_code)
-        print("response text %r" % response.text)
+        print("response text %r" %  json.loads(response.text))
+      
         return response
     except Exception as ex:
         print(ex)
