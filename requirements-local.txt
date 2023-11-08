@@ -1,0 +1,11 @@
+#--index-url="https://artifactory.oci.oraclecorp.com/api/pypi/global-dev-pypi/simple"
+#--extra-index-url="https://artifactory.oci.oraclecorp.com/api/pypi/ocas-service-platform-dev-pypi-local/simple/"
+#--trusted-host="artifactory.oci.oraclecorp.com"
+#oci==2.112.1+preview.1.1649
+#genai_langchain_integration 
+./whl/genai_langchain_integration-0.1.5-py3-none-any.whl
+./whl/oci-2.112.1+preview.1.1649-py3-none-any.whl
+pillow
+langchain
+cohere
+qdrant-client

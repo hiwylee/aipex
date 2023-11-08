@@ -1,5 +1,6 @@
 from langchain.embeddings.cohere import CohereEmbeddings
 from langchain.llms import Cohere
+
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.question_answering import load_qa_chain
@@ -8,13 +9,16 @@ from langchain.vectorstores import Qdrant
 from langchain.document_loaders import TextLoader,PyPDFLoader,CSVLoader,JSONLoader
 from qdrant_client import QdrantClient
 
+# OCI Generative AI Services
+from genai_langchain_integration.langchain_oci import OCIGenAI
+from genai_langchain_integration.langchain_oci_embeddings import OCIGenAIEmbeddings
+
 
 import textwrap as tr
 import random
 import dotenv
 import os
 import json
-
 
 class RAG:
     """
@@ -39,10 +43,14 @@ class RAG:
         dotenv.load_dotenv(".env")
 
         self._cohere_api_key = os.getenv("COHERE_API_KEY")
+        self.EMBED_TYPE   = os.getenv("EMBED_TYPE")
+        self.LLM_TYPE   = os.getenv("LLM_TYPE")
+        self.service_endpoint=os.getenv("service_endpoint")
+        self.compartment_id=os.getenv("compartment_id")
 
         if not os.path.exists(self._db_path):
             if __debug__ :
-                print("Creating DB directory {self._db_path}..\n")
+                print(f"Creating DB directory {self._db_path}..\n")
             os.makedirs(self._db_path)
 
         self._embeddings = self.__init_embeddings__()
@@ -68,14 +76,31 @@ Answer the question based on the text provided. If the text doesn't contain the 
 
     def __init_embeddings__(self):
         if __debug__ :
-            print("Init embeddings ...\n")
-        return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
+            print(f'Init embeddings EMBED_TYPE = [{self.EMBED_TYPE}]...\n')
+            print(self.EMBED_TYPE)
+       
 
+        if self.EMBED_TYPE == "OCI":
+            return OCIGenAIEmbeddings(
+                    model_id="cohere.embed-english-light-v2.0", 
+                    service_endpoint=self.service_endpoint,
+                    compartment_id=self.compartment_id,
+                    )
+        else :
+            return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
     def __init_llm__(self):
         if __debug__ :
-            print("Init cohere ai llm ...\n")
-        return Cohere(model="command-nightly", temperature=0,cohere_api_key=self._cohere_api_key) 
-
+            print(f'Init LLM TYPE = [{self.LLM_TYPE}] ...\n')
+            print(self.LLM_TYPE)
+        if self.LLM_TYPE == "OCI" :
+            return OCIGenAI(
+                    model_id="cohere.command", 
+                    service_endpoint=self.service_endpoint,
+                    compartment_id=self.compartment_id,
+                    temperature=0.0
+                    )
+        else :
+            return Cohere(model="command-nightly", temperature=0,cohere_api_key=self._cohere_api_key) 
     def __init_vectordb__(self):
         if __debug__ :
             print("Init vector db  ...\n")
@@ -89,6 +114,8 @@ Answer the question based on the text provided. If the text doesn't contain the 
     
     def __loader__(self, file):
         if file.endswith('.txt'):
+            return TextLoader(file)
+        elif file== 'answers.json' :
             return TextLoader(file)
         elif file.endswith('.csv'):
             return TextLoader(file)

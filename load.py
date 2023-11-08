@@ -30,8 +30,8 @@ if __name__ == "__main__":
     if not os.path.exists("FY23_insurance.pdf") :
         print("FY23_insurance.pdf not exist")
         exit(1)
+    rag.loadTxt("answers.json")
     rag.loadTxt("steve-jobs-commencement.txt")
-
     rag.loadTxt("FY23_insurance.pdf")
 
 

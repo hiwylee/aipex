@@ -1,3 +1,18 @@
+OCI Generative AI :  python version 3.9.x
+
+Requires-Python >=3.7,<3.10
+oci==2.112.1+preview.1.1649
+----------------------------
+.env
+
+# [OCI | COHERE]
+EMBED_TYPE="OCI"
+LLM_TYPE="OCI"
+service_endpoint="https://generativeai.aiservice.us-chicago-1.oci.oraclecloud.com"
+# your compartment_id
+compartment_id="ocid1.tenancy.oc1..aaaaaaaasz6cicsgfbqh6tj3xahi4ozoescfz36bjm3kucc7lotk2oqep47q"
+
+----------------------------
 To create a virtual environment using venv:
 
 $ python3.11 -m venv py3.11
@@ -17,6 +32,46 @@ sudo firewall-cmd --runtime-to-permanent
 1.3 check
 
 sudo firewall-cmd --zone=public --list-all
+
+
+1.4 requirements.txt file 추가
+whl/genai_langchain_integration-0.1.5-py3-none-any.whl
+whl/oci-2.112.1+preview.1.1649-py3-none-any.whl
+
+----------------------------------------
+1.5 oci setup config
+----------------------------------------
+
+[DEFAULT]
+user=ocid1.user.oc1..aaaaaaaak4x2p2vk33n7vehr6udqx6it7zp6pezoch6v7dky5smxyzy3vg4q
+fingerprint=ca:b2:c7:fd:06:1e:fe:a7:bb:7e:48:3b:96:05:b6:a2
+key_file=/Users/wylee/.oci/oci_api_key.pem
+tenancy=ocid1.tenancy.oc1..aaaaaaaa6ma7kq3bsif76uzqidv22cajs3fpesgpqmmsgxihlbcemkklrsqa
+region=us-chicago-1
+
+----------------------------------------
+1.6 소스 반영
+----------------------------------------
+from genai_langchain_integration.langchain_oci import OCIGenAI
+from genai_langchain_integration.langchain_oci_embeddings import OCIGenAIEmbeddings
+
+source : compartment_id 변경
+llm = OCIGenAI(
+    model_id="cohere.command", 
+    service_endpoint="https://generativeai.aiservice.us-chicago-1.oci.oraclecloud.com",
+    compartment_id="ocid1.tenancy.oc1..aaaaaaaasz6cicsgfbqh6tj3xahi4ozoescfz36bjm3kucc7lotk2oqep47q",
+    temperature=0.0
+)
+
+embeddings = OCIGenAIEmbeddings(
+    model_id="cohere.embed-english-light-v2.0", 
+    service_endpoint="https://generativeai.aiservice.us-chicago-1.oci.oraclecloud.com",
+    compartment_id="ocid1.tenancy.oc1..aaaaaaaasz6cicsgfbqh6tj3xahi4ozoescfz36bjm3kucc7lotk2oqep47q"
+)
+
+----------------------------------------
+
+1.5 테스트
 
 http://152.70.251.41/api/v1/generate
 

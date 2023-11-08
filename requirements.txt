@@ -86,3 +86,5 @@ Werkzeug==2.3.7
 wrapt==1.15.0
 yarl==1.9.2
 zipp==3.17.0
+whl/genai_langchain_integration-0.1.5-py3-none-any.whl
+whl/oci-2.112.1+preview.1.1649-py3-none-any.whl
