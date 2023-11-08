@@ -19,6 +19,13 @@ import random
 import dotenv
 import os
 import json
+import re
+
+import oci
+import logging
+
+# Enable debug logging
+logging.getLogger('oci').setLevel(logging.DEBUG)
 
 class RAG:
     """
@@ -82,11 +89,13 @@ Answer the question based on the text provided. If the text doesn't contain the 
 
         if self.EMBED_TYPE == "OCI":
             return OCIGenAIEmbeddings(
+                    # model_id="cohere.embed-english-light-v2.0", 
                     model_id="cohere.embed-english-light-v2.0", 
                     service_endpoint=self.service_endpoint,
                     compartment_id=self.compartment_id,
                     )
         else :
+            return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
             return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
     def __init_llm__(self):
         if __debug__ :
@@ -94,7 +103,8 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print(self.LLM_TYPE)
         if self.LLM_TYPE == "OCI" :
             return OCIGenAI(
-                    model_id="cohere.command", 
+                    #model_id="cohere.command", 
+                    model_id="cohere.command-light", 
                     service_endpoint=self.service_endpoint,
                     compartment_id=self.compartment_id,
                     temperature=0.0
@@ -125,7 +135,19 @@ Answer the question based on the text provided. If the text doesn't contain the 
             return JSONLoader(file)
         else :
             raise ValueError(f'{file} : no loader found for the type')
-        
+    #
+    # do some post processing on text
+    #
+    def post_process(self, splits):
+        for split in splits:
+            # replace newline with blank
+            split.page_content = split.page_content.replace("\n", " ")
+            split.page_content = re.sub("[^a-zA-Z0-9 \n\.]", " ", split.page_content)
+            # remove duplicate blank
+            split.page_content = " ".join(split.page_content.split())
+
+        return splits
+    
     def loadTxt(self, file):
         embeddings = self._embeddings
         if __debug__ :
@@ -134,7 +156,8 @@ Answer the question based on the text provided. If the text doesn't contain the 
         documents = ldr.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
         texts = text_splitter.split_documents(documents)
-
+        texts = self.post_process(texts)
+        
         Qdrant.from_documents(
                 texts, 
                 self._embeddings, 
