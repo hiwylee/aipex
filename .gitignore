@@ -3,3 +3,5 @@ nohup.out
 *.tar
 __pycache__/**/*
 db/**/*
+gradio/__pycache__/**/*
+streamlit/__pycache__/**/*

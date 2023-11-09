@@ -5,6 +5,10 @@ oci==2.112.1+preview.1.1649
 ----------------------------
 .env
 
+pip install Flask==2.3.3 Werkzeug==2.3.7 Flask-Cors==4.0.0 flask-restx==1.1.0 weaviate-client
+
+
+
 # [OCI | COHERE]
 EMBED_TYPE="OCI"
 LLM_TYPE="OCI"

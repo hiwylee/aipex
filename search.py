@@ -1,4 +1,8 @@
-from langchain.embeddings.cohere import CohereEmbeddings
+# from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings
+from langchain.storage import LocalFileStore
+
+from langchain.embeddings import CohereEmbeddings
 from langchain.llms import Cohere
 
 from langchain.prompts import PromptTemplate
@@ -87,16 +91,26 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print(self.EMBED_TYPE)
        
 
+        model = "multilingual-22-12"
         if self.EMBED_TYPE == "OCI":
-            return OCIGenAIEmbeddings(
+            underlying_embeddings =  OCIGenAIEmbeddings(
                     # model_id="cohere.embed-english-light-v2.0", 
                     model_id="cohere.embed-english-light-v2.0", 
                     service_endpoint=self.service_endpoint,
                     compartment_id=self.compartment_id,
                     )
+            model = underlying_embeddings.model_id
         else :
-            return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
-            return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
+            underlying_embeddings =  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
+            model = underlying_embeddings.model
+            print(f"type={type(underlying_embeddings.model)}")
+        fs = LocalFileStore("./cache/")
+
+        cached_embedder = CacheBackedEmbeddings.from_bytes_store(
+            underlying_embeddings, fs, namespace=model
+        )
+        return cached_embedder;
+
     def __init_llm__(self):
         if __debug__ :
             print(f'Init LLM TYPE = [{self.LLM_TYPE}] ...\n')
@@ -151,7 +165,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
     def loadTxt(self, file):
         embeddings = self._embeddings
         if __debug__ :
-            print(f"Loading File [{file}]...\n")
+            print(f"Loading File [{file}]...")
         ldr = self.__loader__(file)
         documents = ldr.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
@@ -175,7 +189,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
         '''
 
         if __debug__ :
-            print(f"Loading file to vector db collection [{self._collection_name}]")
+            print(f"Loading file [{file}] to vector db collection [{self._collection_name}]\n")
 
         return self
 

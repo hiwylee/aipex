@@ -1,1 +1,1 @@
-streamlit run $*  --server.port 8000
+streamlit run wiki_ui.py $*  --server.port 8000
