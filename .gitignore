@@ -1,6 +1,9 @@
 *.pyc
 nohup.out
-nohup.out
 *.tar
 __pycache__/**/*
 db/**/*
+db.bak/**/*
+gradio/__pycache__/**/*
+streamlit/__pycache__/**/*
+cache

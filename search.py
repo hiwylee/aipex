@@ -1,4 +1,9 @@
-from langchain.embeddings.cohere import CohereEmbeddings
+# from langchain.embeddings.cohere import CohereEmbeddings
+from langchain.embeddings import CohereEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings
+from langchain.storage import LocalFileStore
+
+
 from langchain.llms import Cohere
 from langchain.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,6 +19,7 @@ import random
 import dotenv
 import os
 import json
+import re
 
 
 class RAG:
@@ -69,7 +75,15 @@ Answer the question based on the text provided. If the text doesn't contain the 
     def __init_embeddings__(self):
         if __debug__ :
             print("Init embeddings ...\n")
-        return  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
+        underlying_embeddings =  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
+        ## Cached backed Embeddings 
+        fs = LocalFileStore("./cache/")
+
+        cached_embedder = CacheBackedEmbeddings.from_bytes_store(
+            underlying_embeddings, fs, namespace=underlying_embeddings.model
+        )
+        return cached_embedder;
+        # return underlying_embeddings;
 
     def __init_llm__(self):
         if __debug__ :
@@ -90,6 +104,8 @@ Answer the question based on the text provided. If the text doesn't contain the 
     def __loader__(self, file):
         if file.endswith('.txt'):
             return TextLoader(file)
+        elif file == 'answers.json':
+            return TextLoader(file)
         elif file.endswith('.csv'):
             return TextLoader(file)
         elif file.endswith('.pdf'):
@@ -99,6 +115,16 @@ Answer the question based on the text provided. If the text doesn't contain the 
         else :
             raise ValueError(f'{file} : no loader found for the type')
         
+    def post_process(self, splits):
+        for split in splits:
+            # replace newline with blank
+            split.page_content = split.page_content.replace("\n", " ")
+            split.page_content = re.sub("[^a-zA-Z0-9 \n\.]", " ", split.page_content)
+            # remove duplicate blank
+            split.page_content = " ".join(split.page_content.split())
+
+        return splits
+        
     def loadTxt(self, file):
         embeddings = self._embeddings
         if __debug__ :
@@ -107,6 +133,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
         documents = ldr.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
         texts = text_splitter.split_documents(documents)
+        texts = self.post_process(texts)
 
         Qdrant.from_documents(
                 texts, 
@@ -125,7 +152,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
         '''
 
         if __debug__ :
-            print(f"Loading file to vector db collection [{self._collection_name}]")
+            print(f"Loading file [{file}] to vector db collection [{self._collection_name}]")
 
         return self
 
