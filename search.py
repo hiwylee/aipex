@@ -4,6 +4,7 @@ from langchain.storage import LocalFileStore
 from langchain.embeddings import CohereEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.embeddings import CacheBackedEmbeddings
+from langchain.schema.runnable import RunnablePassthrough
 
 from langchain.llms import Cohere
 
@@ -22,6 +23,8 @@ from langchain.retrievers.document_compressors import CohereRerank
 from genai_langchain_integration.langchain_oci import OCIGenAI
 from genai_langchain_integration.langchain_oci_embeddings import OCIGenAIEmbeddings
 
+from langchain.prompts import ChatPromptTemplate
+
 import sentence_transformers
 
 import textwrap as tr
@@ -38,7 +41,7 @@ import logging
 logging.getLogger('oci').setLevel(logging.DEBUG)
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 50
-
+MAX_DOCS_RETRIEVED = 5
 class RAG:
     """
     RAG Class 
@@ -65,10 +68,7 @@ class RAG:
         self.LLM_TYPE   = os.getenv("LLM_TYPE")
         self.EMBED_HF_MODEL_NAME= os.getenv("EMBED_HF_MODEL_NAME")
         self.ADD_RERANKER= os.getenv("ADD_RERANKER")
-        self.MAX_DOCS_RETRIEVED= os.getenv("MAX_DOCS_RETRIEVED")
 
-
-        
         self.service_endpoint=os.getenv("service_endpoint")
         self.compartment_id=os.getenv("compartment_id")
         self._db_path   = os.getenv("db_path")
@@ -107,7 +107,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
 
     def __init_embeddings__(self):
         if __debug__ :
-            print(f'Init embeddings EMBED_TYPE = [{self.EMBED_TYPE}]...\n')
+            print(f'  >>> Init embeddings EMBED_TYPE = [{self.EMBED_TYPE}]...\n')
             print(self.EMBED_TYPE)
        
 
@@ -141,14 +141,14 @@ Answer the question based on the text provided. If the text doesn't contain the 
         fs = LocalFileStore(self._cache_dir)
 
         cached_embedder = CacheBackedEmbeddings.from_bytes_store(
-            underlying_embeddings, fs, namespace=model
+            underlying_embeddings, fs, namespace=model # huggingface일때 multilingual-22-12 로 잘못 만듦.
         )
         return cached_embedder;
 
     def __init_llm__(self):
         if __debug__ :
-            print(f'Init LLM TYPE = [{self.LLM_TYPE}] ...\n')
-            print(self.LLM_TYPE)
+            print(f'  >>> Init llm : LLM TYPE = [{self.LLM_TYPE}] ...\n')
+
         if self.LLM_TYPE == "OCI" :
             return OCIGenAI(
                     #model_id="cohere.command", 
@@ -161,10 +161,14 @@ Answer the question based on the text provided. If the text doesn't contain the 
             return Cohere(model="command-nightly", temperature=0,cohere_api_key=self._cohere_api_key) 
     def __init_vectordb__(self):
         if __debug__ :
-            print("Init vector db  ...\n")
+            print("  >>> Init vector db  ...\n")
         if self._db is None :
             client =  QdrantClient(path=self._db_path) 
-            self._db =  self.create_retriever(Qdrant(client, self._collection_name, self._embeddings))
+            vectordb =  Qdrant(client, self._collection_name, self._embeddings)
+
+            ###################
+            self._db =  self.create_retriever(vectordb)
+            ######################
         if __debug__ :
             print("initialized   ...\n")
         return self._db
@@ -187,10 +191,11 @@ Answer the question based on the text provided. If the text doesn't contain the 
     # create retrievere with optional reranker
     #
     def create_retriever(self, vectorstore):
-        if self.ADD_RERANKER == False:
+        if self.ADD_RERANKER == "False":
             # no reranking
             print("No reranking...")
-            retriever = vectorstore.as_retriever(search_kwargs={"k": self.MAX_DOCS_RETRIEVED})
+            #retriever = vectorstore.as_retriever()
+            retriever = vectorstore.as_retriever(search_kwargs={"k": MAX_DOCS_RETRIEVED})
         else:
             # to add reranking
             print("Adding reranking to QA chain...")
@@ -198,7 +203,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             compressor = CohereRerank(cohere_api_key=self._cohere_api_key)
 
             base_retriever = vectorstore.as_retriever(
-                search_kwargs={"k": self.MAX_DOCS_RETRIEVED}
+                search_kwargs={"k": MAX_DOCS_RETRIEVED}
             )
 
             retriever = ContextualCompressionRetriever(
@@ -249,7 +254,43 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print(f"Loading file [{file}] to vector db collection [{self._collection_name}]\n")
 
         return self
+    
+    def chat(self, question):
+        
+        if self._db is None :
+            self._db = self.__init_vectordb__()
+        print("Building rag_chain...")
+        template = """Answer the question based only on the following context:
+        {context}
 
+        Question: {question}
+        """
+        rag_prompt = ChatPromptTemplate.from_template(template)
+
+        chain_type_kwargs = {"prompt": rag_prompt}
+        if self._qa is None :
+            if __debug__ :    
+                print(">>> RetrievalQA.from_chain_type start..\n")
+            self._qa = RetrievalQA.from_chain_type(
+                                 llm=self._llm,
+                                 chain_type="stuff",  # “stuff”, “map_reduce”, “refine”, “map_rerank”.
+                                 # retriever=self._db.as_retriever(),
+                                 retriever=self._db,
+                                 chain_type_kwargs=chain_type_kwargs,
+                                 return_source_documents=False
+                                 )
+            if __debug__ :    
+                print(">>> RetrievalQA.from_chain_type end..\n")
+
+        if __debug__ :    
+            print(">>> query start..\n")
+        answer = self._qa({"query": question})
+
+        if __debug__ : 
+            print(">>> query end..\n")
+        result = answer["result"].replace("\n","").replace("Answer:","")
+        return result
+    
     def QA(self, question):
         """
         QA - semantic search
@@ -267,7 +308,8 @@ Answer the question based on the text provided. If the text doesn't contain the 
             self._qa = RetrievalQA.from_chain_type(
                                  llm=self._llm,
                                  chain_type="stuff",  # “stuff”, “map_reduce”, “refine”, “map_rerank”.
-                                 retriever=self._db.as_retriever(),
+                                 # retriever=self._db.as_retriever(),
+                                 retriever=self._db,
                                  chain_type_kwargs=chain_type_kwargs,
                                  return_source_documents=True
                                  )
@@ -275,6 +317,10 @@ Answer the question based on the text provided. If the text doesn't contain the 
                 print(">>> RetrievalQA.from_chain_type end..\n")
         if __debug__ :    
             print(">>> query start..\n")
+        answer = None
+        result = None
+        sources = None
+        
         answer = self._qa({"query": question})
         if __debug__ : 
             print(">>> query end..\n")
