@@ -114,6 +114,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
         model = "multilingual-22-12"
 
         if self.EMBED_TYPE == "OCI":
+            print(f"Loading OCIGenAIEmbeddings : cohere.embed-english-light-v2.0")
             underlying_embeddings =  OCIGenAIEmbeddings(
                     # model_id="cohere.embed-english-light-v2.0", 
                     model_id="cohere.embed-english-light-v2.0", 
@@ -135,9 +136,11 @@ Answer the question based on the text provided. If the text doesn't contain the 
             )
             model_name = self.EMBED_HF_MODEL_NAME
         else :
+            print(f"Loading  CohereEmbeddings-multilingual-22-12")
             underlying_embeddings =  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
             model = underlying_embeddings.model
             print(f"type={type(underlying_embeddings.model)}")
+        
         fs = LocalFileStore(self._cache_dir)
 
         cached_embedder = CacheBackedEmbeddings.from_bytes_store(
@@ -150,14 +153,16 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print(f'  >>> Init llm : LLM TYPE = [{self.LLM_TYPE}] ...\n')
 
         if self.LLM_TYPE == "OCI" :
+            print(f"Loading LLM OCIGenAI-cohere.command")
             return OCIGenAI(
-                    #model_id="cohere.command", 
-                    model_id="cohere.command-light", 
+                    model_id="cohere.command", 
+                    #model_id="cohere.command-light", 
                     service_endpoint=self.service_endpoint,
                     compartment_id=self.compartment_id,
                     temperature=0.0
                     )
         else :
+            print(f"Loading LLM Cohere-command-nightly")
             return Cohere(model="command-nightly", temperature=0,cohere_api_key=self._cohere_api_key) 
     def __init_vectordb__(self):
         if __debug__ :
@@ -320,7 +325,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
         answer = None
         result = None
         sources = None
-        
+
         answer = self._qa({"query": question})
         if __debug__ : 
             print(">>> query end..\n")
