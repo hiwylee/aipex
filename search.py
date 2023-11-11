@@ -142,7 +142,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print(f"type={type(underlying_embeddings.model)}")
         
         fs = LocalFileStore(self._cache_dir)
-
+        print(f"Loading Cache (CacheBackedEmbeddings) ")
         cached_embedder = CacheBackedEmbeddings.from_bytes_store(
             underlying_embeddings, fs, namespace=model # huggingface일때 multilingual-22-12 로 잘못 만듦.
         )
@@ -166,7 +166,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             return Cohere(model="command-nightly", temperature=0,cohere_api_key=self._cohere_api_key) 
     def __init_vectordb__(self):
         if __debug__ :
-            print("  >>> Init vector db  ...\n")
+            print("  >>> Init vector db [Qdrant] ...\n")
         if self._db is None :
             client =  QdrantClient(path=self._db_path) 
             vectordb =  Qdrant(client, self._collection_name, self._embeddings)
@@ -203,7 +203,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             retriever = vectorstore.as_retriever(search_kwargs={"k": MAX_DOCS_RETRIEVED})
         else:
             # to add reranking
-            print("Adding reranking to QA chain...")
+            print("Adding reranking to QA chain [CohereRerank]...")
 
             compressor = CohereRerank(cohere_api_key=self._cohere_api_key)
 
