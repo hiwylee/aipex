@@ -21,8 +21,8 @@ if __name__ == "__main__":
         print(sys.argv[v])
     rag = RAG()
 
-    if not os.path.exists("./doc/database-concepts.pdf") :
-        print("not found : ./doc/database-concepts.pdf")
+    if not os.path.exists("./docs/database-concepts.pdf") :
+        print("not found : ./docs/database-concepts.pdf")
         exit(1)
     if not os.path.exists("./docs/oracle-database-23c-new-features-guide.pdf") :
         print("not found : ./docs/oracle-database-23c-new-features-guide.pdf") 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     if not os.path.exists("./docs/visualizing-data-and-building-reports-oracle-analytics-cloud.pdf") :
         print("not found : ./docs/visualizing-data-and-building-reports-oracle-analytics-cloud.pdf")
         exit(1)
-    rag.loadTxt("./doc/database-concepts.pdf")
+    rag.loadTxt("./docs/database-concepts.pdf")
     rag.loadTxt("./docs/oracle-database-23c-new-features-guide.pdf")
     rag.loadTxt("./docs/visualizing-data-and-building-reports-oracle-analytics-cloud.pdf")
 

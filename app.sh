@@ -1,7 +1,7 @@
 #!/bin/bash
-
+# source ../.apex_genai/bin/activate
 date
-VIRTUAL_ENV="/home/opc/py3.11"
+VIRTUAL_ENV="/home/opc/.apex_genai"
 export VIRTUAL_ENV
 
 $VIRTUAL_ENV/bin/python -c 'import sys; print(sys.version_info)'

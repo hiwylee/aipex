@@ -1,8 +1,10 @@
 # from langchain.embeddings.cohere import CohereEmbeddings
-from langchain.embeddings import CacheBackedEmbeddings
 from langchain.storage import LocalFileStore
 
 from langchain.embeddings import CohereEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings
+
 from langchain.llms import Cohere
 
 from langchain.prompts import PromptTemplate
@@ -13,10 +15,14 @@ from langchain.vectorstores import Qdrant
 from langchain.document_loaders import TextLoader,PyPDFLoader,CSVLoader,JSONLoader
 from qdrant_client import QdrantClient
 
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import CohereRerank
+
 # OCI Generative AI Services
 from genai_langchain_integration.langchain_oci import OCIGenAI
 from genai_langchain_integration.langchain_oci_embeddings import OCIGenAIEmbeddings
 
+import sentence_transformers
 
 import textwrap as tr
 import random
@@ -30,6 +36,8 @@ import logging
 
 # Enable debug logging
 logging.getLogger('oci').setLevel(logging.DEBUG)
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 50
 
 class RAG:
     """
@@ -55,17 +63,27 @@ class RAG:
         self._cohere_api_key = os.getenv("COHERE_API_KEY")
         self.EMBED_TYPE   = os.getenv("EMBED_TYPE")
         self.LLM_TYPE   = os.getenv("LLM_TYPE")
+        self.EMBED_HF_MODEL_NAME= os.getenv("EMBED_HF_MODEL_NAME")
+        self.ADD_RERANKER= os.getenv("ADD_RERANKER")
+        self.MAX_DOCS_RETRIEVED= os.getenv("MAX_DOCS_RETRIEVED")
+
+
+        
         self.service_endpoint=os.getenv("service_endpoint")
         self.compartment_id=os.getenv("compartment_id")
         self._db_path   = os.getenv("db_path")
         self._collection_name=os.getenv("collection_name")
         self._cache_dir=os.getenv("cache_dir")
 
+
         if not os.path.exists(self._db_path):
             if __debug__ :
                 print(f"Creating DB directory {self._db_path}..\n")
             os.makedirs(self._db_path)
-
+        if not os.path.exists(self._cache_dir):
+            if __debug__ :
+                print(f"Creating DB directory {self._cache_dir}..\n")
+            os.makedirs(self._cache_dir)
         self._embeddings = self.__init_embeddings__()
         self._llm = self.__init_llm__()
         # should not initialized vectordb here for loading
@@ -94,6 +112,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
        
 
         model = "multilingual-22-12"
+
         if self.EMBED_TYPE == "OCI":
             underlying_embeddings =  OCIGenAIEmbeddings(
                     # model_id="cohere.embed-english-light-v2.0", 
@@ -102,6 +121,19 @@ Answer the question based on the text provided. If the text doesn't contain the 
                     compartment_id=self.compartment_id,
                     )
             model = underlying_embeddings.model_id
+        elif self.EMBED_TYPE == "LOCAL":
+            print(f"Loading HF Embeddings Model: {self.EMBED_HF_MODEL_NAME}")
+
+            model_kwargs = {"device": "cpu"}
+            # changed to True for BAAI, to use cosine similarity
+            encode_kwargs = {"normalize_embeddings": True}
+
+            underlying_embeddings = HuggingFaceEmbeddings(
+                model_name=self.EMBED_HF_MODEL_NAME,
+                model_kwargs=model_kwargs,
+                encode_kwargs=encode_kwargs,
+            )
+            model_name = self.EMBED_HF_MODEL_NAME
         else :
             underlying_embeddings =  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
             model = underlying_embeddings.model
@@ -132,7 +164,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print("Init vector db  ...\n")
         if self._db is None :
             client =  QdrantClient(path=self._db_path) 
-            self._db =  Qdrant(client, self._collection_name, self._embeddings)
+            self._db =  self.create_retriever(Qdrant(client, self._collection_name, self._embeddings))
         if __debug__ :
             print("initialized   ...\n")
         return self._db
@@ -152,6 +184,29 @@ Answer the question based on the text provided. If the text doesn't contain the 
         else :
             raise ValueError(f'{file} : no loader found for the type')
     #
+    # create retrievere with optional reranker
+    #
+    def create_retriever(self, vectorstore):
+        if self.ADD_RERANKER == False:
+            # no reranking
+            print("No reranking...")
+            retriever = vectorstore.as_retriever(search_kwargs={"k": self.MAX_DOCS_RETRIEVED})
+        else:
+            # to add reranking
+            print("Adding reranking to QA chain...")
+
+            compressor = CohereRerank(cohere_api_key=self._cohere_api_key)
+
+            base_retriever = vectorstore.as_retriever(
+                search_kwargs={"k": self.MAX_DOCS_RETRIEVED}
+            )
+
+            retriever = ContextualCompressionRetriever(
+                base_compressor=compressor, base_retriever=base_retriever
+            )
+
+        return retriever
+    #
     # do some post processing on text
     #
     def post_process(self, splits):
@@ -170,7 +225,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             print(f"Loading File [{file}]...")
         ldr = self.__loader__(file)
         documents = ldr.load()
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
         texts = text_splitter.split_documents(documents)
         texts = self.post_process(texts)
         
