@@ -45,8 +45,7 @@ class RAG:
     def __init__(self):
         self._name = 'RAG'
         self._db   = None
-        self._db_path   = './db'
-        self._collection_name='my_documents'
+
 
         self._qa   = None
         self._llm   = None
@@ -58,6 +57,9 @@ class RAG:
         self.LLM_TYPE   = os.getenv("LLM_TYPE")
         self.service_endpoint=os.getenv("service_endpoint")
         self.compartment_id=os.getenv("compartment_id")
+        self._db_path   = os.getenv("db_path")
+        self._collection_name=os.getenv("collection_name")
+        self._cache_dir=os.getenv("cache_dir")
 
         if not os.path.exists(self._db_path):
             if __debug__ :
@@ -104,7 +106,7 @@ Answer the question based on the text provided. If the text doesn't contain the 
             underlying_embeddings =  CohereEmbeddings(model = "multilingual-22-12", cohere_api_key=self._cohere_api_key)
             model = underlying_embeddings.model
             print(f"type={type(underlying_embeddings.model)}")
-        fs = LocalFileStore("./cache/")
+        fs = LocalFileStore(self._cache_dir)
 
         cached_embedder = CacheBackedEmbeddings.from_bytes_store(
             underlying_embeddings, fs, namespace=model

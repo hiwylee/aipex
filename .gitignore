@@ -2,8 +2,11 @@
 nohup.out
 *.tar
 __pycache__/**/*
-db/**/*
 db.bak/**/*
 gradio/__pycache__/**/*
 streamlit/__pycache__/**/*
-cache
+#db/**/*
+#cache
+#db_path/**/*
+#db_23c_docs/**/*
+#db_23c_cache/**/*
