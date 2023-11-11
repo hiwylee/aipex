@@ -54,6 +54,7 @@ if question := st.chat_input("Hello, how can I help you?"):
     try:
         print("...")
         #response = rag.chat(question)
+        response,_ = rag.QA(question)
 
         # Display assistant response in chat message container
         with st.chat_message("assistant"):
