@@ -7,27 +7,28 @@ import streamlit as st
 # this function initialise the rag chain, creating retriever, llm and chain
 from search import RAG
 
-def reset_conversation():
-    st.session_state.messages = []
-
 #
 # Main
 #
-# init RAG
-rag = RAG()
-
 st.set_page_config(
     page_title="OCI Generative AI Bot powered by RAG",
     page_icon="🧊",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.extremelycoolapp.com/help',
+        'Report a bug': "https://www.extremelycoolapp.com/bug",
+        'About': "# This is a header. This is an *extremely* cool app!"
+    }
 )
 
-st.title("OCI Generative AI Bot powered by RAG")
-st.subheader('질문 대상이 되는 문서', divider='rainbow')
-st.markdown("- " + "database-concepts.pdf")
-st.markdown("- " + "oracle-database-23c-new-features-guide.pdf")
-st.markdown("- " + "visualizing-data-and-building-reports-oracle-analytics-cloud.pd")
+
+def reset_conversation():
+    st.session_state.messages = []
+
+st.subheader('OCI Generative AI Bot powered by RAG', divider='rainbow')
+
+st.text("database-concepts, oracle-database-23c-new-features-guide, visualizing-data-and-building-reports-oracle-analytics-cloud")
     
 # Added reset button
 st.button("Clear Chat History", on_click=reset_conversation)
@@ -37,6 +38,7 @@ if "messages" not in st.session_state:
     reset_conversation()
 
 
+rag = RAG()
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):

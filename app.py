@@ -16,11 +16,12 @@ import dotenv
 
 # do it first
 
-app = Flask(__name__)
+
 
 # https://hwangtoemat.github.io/computer-science/2020-10-21-CORS/
 # CORS(app, resources={r'*': {'origins': 'apex server'}})
 
+app = Flask(__name__)
 CORS(app)
 api = Api(app)
 
@@ -38,66 +39,6 @@ def handle_preflight():
         res = Response()
         res.headers['X-Content-Type-Options'] = '*'
         return res
-
-"""
-rag = RAG()
-
-# https://givemethesocks.tistory.com/116
-
-questition_model = api.model('generate', strict=True, model={
-    'question': fields.String(title='question', default='What was Reed College great at?', required=True),
-})
-
-summary_model = api.model('summary', strict=True, model={
-    'question': fields.String(title='text to summmary', default='text to summmary', required=True),
-})
-
-classify_model = api.model('classify', strict=True, model={
-    'question': fields.String(title='lists to classify', default='list to classify', required=True),
-})
-"""
-
-@api.route('/hello')  
-class DoGet(Resource):
-    def get(self):  
-        return {'hello': 'world!'}
-
-
-"""
-# rest api 
-@api.route('/api/v1/generate')  
-class Generate(Resource):
-    @api.expect(questition_model, validate=True)
-    def post(self):  
-        question = request.json.get('question')
-        answer, source = rag.QA(question)
-        setQuestion(question, answer,source )
-        # return jsonify(ai_answer)
-
-        return ai_answer
-
-@api.route('/api/v1/summarize')
-class Summarize(Resource):
-    @api.expect(summary_model, validate=True)
-    def post(self):
-        question = request.json.get('question')
-        answer, source = rag.QA(question)
-        setQuestion(question, answer, source)
-
-        return ai_answer
-
-@api.route('/api/v1/classify')
-class Classfy(Resource):
-     
-     @api.expect(classify_model, validate=True)
-     def post(self):
-        question = request.json.get('question')
-        answer, source = rag.QA(question)
-        setQuestion(question, answer, source)
-
-        return ai_answer
-        #return json.dumps(ai_answer)
-"""
 
 import time
 if __name__ == "__main__":
