@@ -82,7 +82,7 @@ class RAG:
             os.makedirs(self._db_path)
         if not os.path.exists(self._cache_dir):
             if __debug__ :
-                print(f"Creating DB directory {self._cache_dir}..\n")
+                print(f"Creating DB directory {self._cache_dir }..\n")
             os.makedirs(self._cache_dir)
         self._embeddings = self.__init_embeddings__()
         self._llm = self.__init_llm__()

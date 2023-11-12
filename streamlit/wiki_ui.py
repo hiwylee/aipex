@@ -2,17 +2,7 @@ import streamlit as st
 from send_post import do_post
 import pandas as pd
 
-st.set_page_config(
-    page_title="다국어 위키 검색",
-    page_icon="🧊",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://www.extremelycoolapp.com/help',
-        'Report a bug': "https://www.extremelycoolapp.com/bug",
-        'About': "# This is a header. This is an *extremely* cool app!"
-    }
-)
+
 st.title("위키 다국어 검색")
 
 lang_sz, kw_sz, btn_sz = st.columns([0.1,0.6,0.3])
