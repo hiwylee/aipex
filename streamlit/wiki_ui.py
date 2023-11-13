@@ -1,6 +1,7 @@
 import streamlit as st
 from send_post import do_post
 import pandas as pd
+from io import StringIO
 
 
 st.title("위키 다국어 검색")
@@ -18,17 +19,18 @@ with btn_sz :
 st.divider()  # 👈 Draws a horizontal rule
 if btn :
     res = do_post("/aipex/wiki_search",{"question": kw, "lang":lang })  
+    print(f"status = {res.status_code}")
+    if res.status_code == 200 :
+        sorted_df = pd.read_json(StringIO(res.text)).sort_values(by='views',ascending=False)
+        df = sorted_df.drop(columns=['lang','_additional','text'])
+        st.dataframe(
+            df,
+            column_config={
+                "title": "제목",
+                "url": st.column_config.LinkColumn("URL"),
+                "views":  st.column_config.NumberColumn(  "조회", format="%d ⭐",)
+                }
+            ) 
 
-    sorted_df = pd.read_json(res.text).sort_values(by='views',ascending=False)
-    df = sorted_df.drop(columns=['lang','_additional','text'])
-    st.dataframe(
-        df,
-        column_config={
-            "title": "제목",
-            "url": st.column_config.LinkColumn("URL"),
-            "views":  st.column_config.NumberColumn(  "조회", format="%d ⭐",)
-            }
-        )
-
-    st.divider()  # 👈 Draws a horizontal rule   
+    st.divider()  # 👈 Draws a horizontal rule   ß
     st.json(res.text)
