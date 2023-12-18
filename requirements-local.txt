@@ -17,3 +17,5 @@ torch_utils
 sentence_transformers
 python-dotenv
 weaviate-client
+streamlit
+gradio

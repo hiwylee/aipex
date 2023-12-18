@@ -12,7 +12,7 @@ rag = RAG()
 
 do_generate_api = Namespace('generate')
 do_generate_api_model = do_generate_api.model('generate', strict=True, model={
-    'question': fields.String(title='keyword to search', default='What was Reed College great at?', required=True),
+    'question': fields.String(title='keyword to search', default='Oracle 23c new features?', required=True),
 })
 
 

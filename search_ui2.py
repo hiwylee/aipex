@@ -13,7 +13,7 @@ exam = st.selectbox('Example',
                        ("Oracle 23c new features",
                         "what is blockchain table and new feature of oracle database 23c related to blockchain", 
                         "Make a list of database 23c innovations in AI", 
-                        "what is JSON Relational Duality",
+                        "Make a list of database 23c innovations in AI",
                         "Are there features related to Machine Learning in Oracle Database 23c?"),
                     )
 kw = st.text_input('질문', placeholder="what is JSON Relational Duality", value=exam)  
@@ -27,5 +27,5 @@ if btn :
     # st.text_area("answer",value=answer)
     st.json({"answer": answer })
     
-    st.json({"source":source })
+    st.json({source})
 

@@ -354,14 +354,15 @@ Answer the question based on the text provided. If the text doesn't contain the 
             wrapped = str(source.page_content)
 
             if __debug__ :
-                print(f"[{idx+1} : {source.metadata} ]: \n {wrapped}")
-                print(f"{source}")
+                #print(f"[{idx+1} : {source.metadata} ]: \n {wrapped}")
+                #print(f"{source}")
+                print("{'index':" + f"{idx}, {source.metadata},'page_content':'{source.page_content}'" + "},\n")
             # {'source': './docs/oracle-database-23c-new-features-guide.pdf', 'page': 11, 'relevance_score': 0.99890554}
-            source_wrapped.append(f"[{idx+1} : {source.metadata} ] : \n {wrapped}")
+            source_wrapped.append("{'index':" + f"{idx}, {source.metadata},'page_content':'{source.page_content}'"+"}")
             
             #source_wrapped.append(f"[{idx+1}. source : {source.metadata['source']} ]: \n {wrapped}")
             
         if __debug__ :
             print("QA end..\n")
         #return result, str(sources)
-        return result, '\n'.join(source_wrapped)
+        return result, ',\n'.join(source_wrapped)
