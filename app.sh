@@ -6,9 +6,12 @@ export VIRTUAL_ENV
 
 $VIRTUAL_ENV/bin/python -c 'import sys; print(sys.version_info)'
 
-cd /home/opc/dev
+cd /home/opc/aipex
 
-rm ./db/.lock 2> /dev/null
+# remove db lock if exists because only one local QDrant allowed
+# 
+rm ./db_23c/.lock 2> /dev/null
+
 export FLASK_ENV=development
 export FLASK_APP=app
 $VIRTUAL_ENV/bin/python app.py
