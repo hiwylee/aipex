@@ -1,9 +1,14 @@
-#!/bin/bash
-# source ../.apex_genai/bin/activate
-date
-# 
-#VIRTUAL_ENV="/home/opc/.apex_genai"
+conda create -n aipex  python=3.11
+conda activate aipex
+cd aipex/
+pip install --upgrade pip
 
+
+pip install -r  requirements-local.txt 
+
+
+## app.sh
+---------------------------------------
 # conda activate aipex_genai
 VIRTUAL_ENV="/home/opc/miniconda3/envs/aipex"
 export VIRTUAL_ENV
@@ -20,3 +25,4 @@ export FLASK_ENV=development
 export FLASK_APP=app
 $VIRTUAL_ENV/bin/python app.py
 date
+---------------------------------------

@@ -356,8 +356,11 @@ Answer the question based on the text provided. If the text doesn't contain the 
             if __debug__ :
                 print(f"[{idx+1} : {source.metadata} ]: \n {wrapped}")
                 print(f"{source}")
-            #source_wrapped.append(f"[{idx+1} : {source.metadata} ] : \n {wrapped}")
-            source_wrapped.append(f"[{idx+1}. source : {source.metadata['source']} ]: \n {wrapped}")
+            # {'source': './docs/oracle-database-23c-new-features-guide.pdf', 'page': 11, 'relevance_score': 0.99890554}
+            source_wrapped.append(f"[{idx+1} : {source.metadata} ] : \n {wrapped}")
+            
+            #source_wrapped.append(f"[{idx+1}. source : {source.metadata['source']} ]: \n {wrapped}")
+            
         if __debug__ :
             print("QA end..\n")
         #return result, str(sources)
